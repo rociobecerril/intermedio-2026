@@ -1,0 +1,14 @@
+{
+ "f1_macro_test": 0.932,
+ "accuracy_test": 0.9333,
+ "f1_macro_zeroshot_40": 0.6481,
+ "f1_macro_zeroshot_test": 0.6295,
+ "acuerdo_llm_humano": 19,
+ "n_total": 400,
+ "n_train": 280,
+ "n_val": 60,
+ "n_test": 60,
+ "modelo_base": "distilbert-base-multilingual-cased",
+ "modelo_llm": "gemini-3.1-flash-lite",
+ "fecha": "2026-10-18"
+}
