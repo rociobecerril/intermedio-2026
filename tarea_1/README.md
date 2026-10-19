@@ -23,7 +23,7 @@ Acuerdo del LLM con la auditoría humana: **19/20**. Split 70/15/15 estratificad
 
 ## 4. Dos limitaciones técnicas
 1. **Datos pequeños y de un solo medio:** test de 60 noticias (15 por clase), así que un error mueve el F1 de una clase ~3 puntos; además, 350 de las 400 notas vienen de un muestreo histórico, no de un corte temporal continuo. El modelo duda con titulares fuera de distribución (p. ej. un titular de iPhone con IA salió como `economia` con solo 46 % de probabilidad).
-2. **Etiqueta de referencia ruidosa:** la verdad de terreno es la sección del diario, que en notas de frontera (trámites del Estado, regulación) no coincide con el criterio de un lector. Los pesos del modelo (`modelo/model.safetensors`, ~540 MB) **no están en el repositorio** (superan lo razonable para GitHub); se regeneran ejecutando `02_clasificacion.ipynb`.
+2. **Etiqueta de referencia ruidosa:** la verdad de terreno es la sección del diario, que en notas de frontera (trámites del Estado, regulación) no coincide con el criterio de un lector. Los pesos del modelo (~540 MB) no se suben completos a GitHub: viven en `modelo/partes/` en 7 trozos de ≤ 89 MB con su `SHA256`, y `app.py` reconstruye `modelo/model.safetensors` al primer uso (verificando el hash). También se pueden regenerar ejecutando `02_clasificacion.ipynb`.
 
 ## 5. Cómo ejecutar en local
 ```bash

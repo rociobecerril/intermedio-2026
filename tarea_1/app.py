@@ -1,4 +1,5 @@
 """Dashboard Streamlit – Tarea 1: Noticias peruanas, del titular al clasificador."""
+import hashlib
 import json
 from pathlib import Path
 
@@ -24,11 +25,35 @@ def cargar_metricas():
     return json.loads(ruta.read_text(encoding="utf-8")) if ruta.exists() else {}
 
 
+def asegurar_pesos():
+    """Si falta modelo/model.safetensors, lo reconstruye uniendo modelo/partes/model.partNN (y verifica su SHA-256)."""
+    destino = MODELO_DIR / "model.safetensors"
+    if destino.exists():
+        return
+    partes = sorted((MODELO_DIR / "partes").glob("model.part*"))
+    if not partes:
+        raise FileNotFoundError("No hay pesos: falta modelo/model.safetensors y modelo/partes/. Ejecuta 02_clasificacion.ipynb.")
+    tmp = destino.with_suffix(".tmp")
+    h = hashlib.sha256()
+    with open(tmp, "wb") as out:
+        for p in partes:
+            with open(p, "rb") as f:
+                while bloque := f.read(8 * 1024 * 1024):
+                    out.write(bloque)
+                    h.update(bloque)
+    esperado = (MODELO_DIR / "partes" / "SHA256").read_text().split()[0]
+    if h.hexdigest() != esperado:
+        tmp.unlink()
+        raise RuntimeError("Los pesos reconstruidos no coinciden con el SHA-256 esperado (partes incompletas o corruptas).")
+    tmp.rename(destino)
+
+
 @st.cache_resource
 def cargar_modelo():
     import torch
     from transformers import AutoModelForSequenceClassification, AutoTokenizer
 
+    asegurar_pesos()
     tok = AutoTokenizer.from_pretrained(MODELO_DIR)
     model = AutoModelForSequenceClassification.from_pretrained(MODELO_DIR).eval()
     return tok, model, torch
@@ -104,10 +129,10 @@ titular = st.text_input("Escribe o pega un titular", placeholder="Ej.: Congreso 
 if st.button("Clasificar", type="primary"):
     if not titular.strip():
         st.warning("Escribe un titular primero.")
-    elif not (MODELO_DIR / "model.safetensors").exists():
+    elif not (MODELO_DIR / "model.safetensors").exists() and not (MODELO_DIR / "partes").exists():
         st.error("No se encontraron los pesos del modelo en `modelo/`. Ejecuta `02_clasificacion.ipynb` para entrenarlo.")
     else:
-        with st.spinner("Clasificando..."):
+        with st.spinner("Cargando modelo (la primera vez reconstruye los pesos, ~540 MB) y clasificando..."):
             probs = clasificar(titular.strip())
         pred = max(probs, key=probs.get)
         st.success(f"Categoría predicha: **{pred}** — probabilidad {probs[pred]:.1%}")
